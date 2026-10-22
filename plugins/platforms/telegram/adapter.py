@@ -5759,6 +5759,11 @@ class TelegramAdapter(BasePlatformAdapter):
             "bots_require_mention", "TELEGRAM_BOTS_REQUIRE_MENTION", "false"
         )
 
+    def _telegram_voice_response_chats(self) -> set[str]:
+        """Group chat ids where a voice note counts as addressed to the bot (``require_mention`` can't be
+        met by speech: the wake word is inside the audio, which isn't transcribed until dispatch)."""
+        return self._extra_str_set("voice_response_chats", "TELEGRAM_VOICE_RESPONSE_CHATS")
+
     def _telegram_free_response_chats(self) -> set[str]:
         return self._extra_str_set("free_response_chats", "TELEGRAM_FREE_RESPONSE_CHATS")
 
@@ -6388,6 +6393,8 @@ class TelegramAdapter(BasePlatformAdapter):
         if self._bot_sender_suppressed(message):
             return False
         if not self._telegram_require_mention() or self._is_reply_to_bot(message):
+            return True
+        if getattr(message, "voice", None) and chat_id_str in self._telegram_voice_response_chats():
             return True
         if not self._telegram_guest_mode() and self._message_mentions_bot(message):
             return True
