@@ -1160,6 +1160,7 @@ from plugins.platforms.discord.adapter_config_readers import (
     _resolve_exec_approval_admin_gate)
 from plugins.platforms.discord.adapter_exec_approval_view import build_exec_approval_view
 from plugins.platforms.discord.adapter_component_auth import opener_refusal
+from plugins.platforms.discord.adapter_forum_topic import effective_topic
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -5663,13 +5664,8 @@ class DiscordAdapter(DiscordLiveGatesMixin, DiscordCommandSyncMixin, DiscordAuth
         return False
 
     def _get_effective_topic(self, channel: Any, is_thread: bool = False) -> Optional[str]:
-        """Return the channel topic, falling back to the parent forum's topic for forum threads."""
-        topic = getattr(channel, "topic", None)
-        if not topic and is_thread:
-            parent = getattr(channel, "parent", None)
-            if parent and self._is_forum_parent(parent):
-                topic = getattr(parent, "topic", None)
-        return topic
+        """Channel topic; forum posts inherit the forum's topic and add their tags."""
+        return effective_topic(channel, is_thread=is_thread, is_forum=self._is_forum_parent)
 
     # ------------------------------------------------------------------
     # Attachment download helpers
